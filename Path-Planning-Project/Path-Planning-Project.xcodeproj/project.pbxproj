@@ -7,12 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AA5483421F308FD000CA8594 /* PathPlanning.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AA5483401F308FD000CA8594 /* PathPlanning.cpp */; };
 		AA57BF991F2B4E7F004BE2EA /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AA57BF941F2B4E7F004BE2EA /* main.cpp */; };
 		AA57BF9A1F2B4E7F004BE2EA /* GlobalMap.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AA57BF971F2B4E7F004BE2EA /* GlobalMap.cpp */; };
 		AA57BF9E1F2B5415004BE2EA /* libuWS.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = AA57BF9C1F2B5415004BE2EA /* libuWS.dylib */; };
 		AA57BF9F1F2B5415004BE2EA /* libuv.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = AA57BF9D1F2B5415004BE2EA /* libuv.1.dylib */; };
 		AA57BFA11F2B542E004BE2EA /* libssl.1.0.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = AA57BFA01F2B542E004BE2EA /* libssl.1.0.0.dylib */; };
 		AA57BFA31F2B5455004BE2EA /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = AA57BFA21F2B5455004BE2EA /* libz.tbd */; };
+		AA65F54B1F2E21C0003B665A /* Prediction.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AA65F5491F2E21C0003B665A /* Prediction.cpp */; };
 		AADC13121F2E0666008AD0EA /* Trajectory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AADC13101F2E0666008AD0EA /* Trajectory.cpp */; };
 /* End PBXBuildFile section */
 
@@ -29,6 +31,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		AA5483401F308FD000CA8594 /* PathPlanning.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PathPlanning.cpp; path = ../../src/PathPlanning.cpp; sourceTree = "<group>"; };
+		AA5483411F308FD000CA8594 /* PathPlanning.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PathPlanning.h; path = ../../src/PathPlanning.h; sourceTree = "<group>"; };
 		AA57BF881F2B4E4B004BE2EA /* Path-Planning-Project */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "Path-Planning-Project"; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA57BF921F2B4E7F004BE2EA /* spline.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = spline.h; path = ../../src/spline.h; sourceTree = "<group>"; };
 		AA57BF931F2B4E7F004BE2EA /* PathWriter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PathWriter.h; path = ../../src/PathWriter.h; sourceTree = "<group>"; };
@@ -41,6 +45,8 @@
 		AA57BF9D1F2B5415004BE2EA /* libuv.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libuv.1.dylib; path = ../../../../../usr/local/Cellar/libuv/1.11.0/lib/libuv.1.dylib; sourceTree = "<group>"; };
 		AA57BFA01F2B542E004BE2EA /* libssl.1.0.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libssl.1.0.0.dylib; path = ../../../../../usr/local/Cellar/openssl/1.0.2l/lib/libssl.1.0.0.dylib; sourceTree = "<group>"; };
 		AA57BFA21F2B5455004BE2EA /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
+		AA65F5491F2E21C0003B665A /* Prediction.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Prediction.cpp; path = ../../src/Prediction.cpp; sourceTree = "<group>"; };
+		AA65F54A1F2E21C0003B665A /* Prediction.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Prediction.h; path = ../../src/Prediction.h; sourceTree = "<group>"; };
 		AADC13101F2E0666008AD0EA /* Trajectory.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Trajectory.cpp; path = ../../src/Trajectory.cpp; sourceTree = "<group>"; };
 		AADC13111F2E0666008AD0EA /* Trajectory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Trajectory.h; path = ../../src/Trajectory.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -84,6 +90,10 @@
 				AA57BF931F2B4E7F004BE2EA /* PathWriter.h */,
 				AA57BF941F2B4E7F004BE2EA /* main.cpp */,
 				AA57BF951F2B4E7F004BE2EA /* json.hpp */,
+				AA5483401F308FD000CA8594 /* PathPlanning.cpp */,
+				AA5483411F308FD000CA8594 /* PathPlanning.h */,
+				AA65F5491F2E21C0003B665A /* Prediction.cpp */,
+				AA65F54A1F2E21C0003B665A /* Prediction.h */,
 				AA57BF961F2B4E7F004BE2EA /* GlobalMap.h */,
 				AADC13101F2E0666008AD0EA /* Trajectory.cpp */,
 				AADC13111F2E0666008AD0EA /* Trajectory.h */,
@@ -161,9 +171,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA65F54B1F2E21C0003B665A /* Prediction.cpp in Sources */,
 				AADC13121F2E0666008AD0EA /* Trajectory.cpp in Sources */,
 				AA57BF9A1F2B4E7F004BE2EA /* GlobalMap.cpp in Sources */,
 				AA57BF991F2B4E7F004BE2EA /* main.cpp in Sources */,
+				AA5483421F308FD000CA8594 /* PathPlanning.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

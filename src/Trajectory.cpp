@@ -14,21 +14,39 @@ double rad2deg(double x) { return x * 180 / pi(); }
 std::tuple<std::vector<double>, std::vector<double>> Trajectory::update(
     std::vector<double> &prev_path_x,
     std::vector<double> &prev_path_y,
-    double car_s, double car_d, double car_yaw,
-    size_t lane, bool &laneShift)
+    double car_s, double car_d, double car_yaw)
 {
-  double pos_s, pos_d;
   int path_size = prev_path_x.size();
   std::vector<double> next_x_vals;
   std::vector<double> next_y_vals;
 
+  //Use last path as next values for current path
   for(int i = 0; i < path_size; i++)
   {
      next_x_vals.push_back(prev_path_x[i]);
      next_y_vals.push_back(prev_path_y[i]);
   }
 
-  std::cout << path_size << std::endl;
+  size_t lane = 0;
+  if(path_size > 0)
+  {
+    lane = std::floor(d_vals.front()/4.0);;
+  }
+  else
+    lane = std::floor(car_d/4.0);
+
+
+  if(_stateChangeInProgress)
+  {
+    if(lane == _targetLane)
+    {
+      //_stateChangeInProgress = false;
+      _state = State::KeepLane;
+    }
+  }
+
+  double pos_s, pos_d, acc_in_s;
+  double speed_in_s = 0;
   if(path_size == 0)
   {
      pos_s = car_s;
@@ -42,115 +60,137 @@ std::tuple<std::vector<double>, std::vector<double>> Trajectory::update(
        d_vals.pop_front();
      }
 
-//     double pos_x = prev_path_x[path_size-1];
-//     double pos_y = prev_path_y[path_size-1];
-//
-//     double pos_x2 = prev_path_x[path_size-2];
-//     double pos_y2 = prev_path_y[path_size-2];
-//     angle = atan2(pos_y-pos_y2,pos_x-pos_x2);
-//
-//     auto frenet = globalMap.TransformCartesianToFrenet(pos_x, pos_y, angle);
+     double pos_s_before2 = s_vals[s_vals.size()-3];
+     double pos_s_before1 = s_vals[s_vals.size()-2];
      pos_s = s_vals.back();
      pos_d = d_vals.back();
+
+     speed_in_s = (pos_s - pos_s_before1)/INTERVAL;
+     acc_in_s = ((pos_s - pos_s_before1)/INTERVAL - (pos_s_before1 -pos_s_before2)/INTERVAL)/INTERVAL;
+
   }
 
-  //TODO use JMT with different times to not exceed limits.
-  double dist_inc = 0.43;
-  if(laneShift)
+  Car carBefore = prediction.getNextCarInLane(lane, pos_s);
+
+  if(carBefore.isValid && ((carBefore.getLastS() - pos_s) <= SAFETY_DISTANCE))
   {
-    //Remove previous path
-    size_t start = 10;
-    next_x_vals.erase(next_x_vals.begin()+start, next_x_vals.end());
-    next_y_vals.erase(next_y_vals.begin()+start, next_y_vals.end());
-    s_vals.erase(s_vals.begin()+start, s_vals.end());
-    d_vals.erase(d_vals.begin()+start, d_vals.end());
-
-    pos_s = s_vals.back();
-    pos_d = d_vals.back();
-
-    double totalTime = 1.75;
-
-    auto a = JMT(std::vector< double>{pos_d, 0,0}, std::vector <double>{2.0 + (4*lane),0,0}, totalTime);
-    for(int i = 0; i < totalTime/0.02; i++)
-    {
-      double t = (i+1)*0.02;
-      double d = a[0] + a[1] * t + a[2] * t*t + a[3] * t*t*t + a[4] * t*t*t*t + a[5] * t*t*t*t*t;
-      double s = pos_s+((i+1)*dist_inc);
-      auto coord = globalMap.TransformFrenetToCartesian(s, d);
-      next_x_vals.push_back(coord[0]);
-      next_y_vals.push_back(coord[1]);
-      storeFrenetPoint(s, d);
-    }
-    laneShift = false;
+    //Slow down to next car speed
+    _target_speed = carBefore.speed;
+    if(_target_speed > TARGET_SPEED)
+      _target_speed = TARGET_SPEED;
   }
   else
   {
-    //straight path constant speed
-    if(path_size < WAY_POINTS)
+    _target_speed = TARGET_SPEED;
+  }
+
+//  if(carBefore.isValid)
+//    carBefore.print(pos_s);
+
+  if(_state != State::KeepLane && !_stateChangeInProgress)
+  {
+
+    if(_state == State::ChangeLaneLeft)
     {
-      for(size_t i = 0; i < WAY_POINTS-path_size; i++)
-      {
-         double s = pos_s+((i+1)*dist_inc);
-         double d = 2.0 + (4*lane);
-         auto coord = globalMap.TransformFrenetToCartesian(s, d);
-         next_x_vals.push_back(coord[0]);
-         next_y_vals.push_back(coord[1]);
-         storeFrenetPoint(s, d);
-      }
+      _targetLane = lane-1;
     }
+    else
+    {
+      _targetLane = lane+1;
+    }
+
+    std::cout << "Check state change for target lane" << _targetLane <<"\n";
+    //Check if possible
+    Car carAhead = prediction.getNextCarInLane(_targetLane, pos_s);
+    double distanceAhead = SAFETY_DISTANCE_AHEAD;
+    if(carAhead.isValid)
+    {
+      std::cout << "Car ahead ";
+      distanceAhead = carAhead.getLastS() - pos_s;
+      carAhead.print(pos_s);
+    }
+      
+    Car carBehind = prediction.getPreviousCarInLane(_targetLane, car_s);
+    double distanceBehind = SAFETY_DISTANCE_BEHIND;
+    if(carBehind.isValid)
+    {
+       distanceBehind = pos_s - carBehind.getLastS();
+       std::cout << "Car behind ";
+       carBehind.print(pos_s);
+    }
+    
+
+    if(distanceBehind >= SAFETY_DISTANCE_BEHIND
+        && distanceAhead >= SAFETY_DISTANCE_AHEAD
+        && _targetLane <= 2 )
+    {
+      _stateChangeInProgress = true;
+      _laneShiftQueued = false;
+
+      std::cout << "Prepare state change\n";
+
+      //Remove previous path
+      size_t start = 5;
+      next_x_vals.erase(next_x_vals.begin()+start, next_x_vals.end());
+      next_y_vals.erase(next_y_vals.begin()+start, next_y_vals.end());
+      s_vals.erase(s_vals.begin()+start, s_vals.end());
+      d_vals.erase(d_vals.begin()+start, d_vals.end());
+
+      pos_s = s_vals.back();
+      pos_d = d_vals.back();
+
+      double pos_s_before = s_vals[s_vals.size()-2];
+      pos_s = s_vals.back();
+      pos_d = d_vals.back();
+
+      //Calculate speed
+      speed_in_s = (pos_s - pos_s_before)/INTERVAL;
+
+    }
+    else
+    {
+      std::cout << "Canceled state change\n";
+      _targetLane = lane;
+      _stateChangeInProgress = false;
+      _state = State::KeepLane;
+    }
+  }
+
+  //straight path constant speed
+  if(path_size < WAY_POINTS || ( _stateChangeInProgress && !_laneShiftQueued ) )
+  {
+    double pos_d_2 = 2.0 + (4*_targetLane);
+    double deltaSpeed = _target_speed - speed_in_s;
+    double timeInSec = std::abs(deltaSpeed / MAX_ACC_IN_S);
+    double timeForDInS = std::abs(pos_d-pos_d_2)/MAX_ACC_IN_D;
+    if(timeInSec < timeForDInS)
+      timeInSec = timeForDInS;
+    double timeInQueue = path_size * INTERVAL;
+    timeInSec = (timeInSec+timeInQueue) < 1.0 ? 1.0-timeInQueue : timeInSec;
+
+    double pos_s_2 = pos_s + ((speed_in_s+_target_speed)/2.0)*timeInSec;
+
+    FrenetState start(pos_s, pos_d, speed_in_s, 0, acc_in_s,0);
+    FrenetState stop(pos_s_2, pos_d_2, _target_speed, 0, 0,0);
+
+    std::cout << "Target d is " << pos_d_2 << std::endl;
+
+    auto path = generator.generate(start, stop, timeInSec);
+    auto cartesianPath = std::get<0>(path);
+    auto frenetPath = std::get<1>(path);
+
+    for(size_t i=1; i < cartesianPath.size(); ++i) //omit first == actual value
+    {
+      next_x_vals.push_back(cartesianPath.at(i).X);
+      next_y_vals.push_back(cartesianPath.at(i).Y);
+      storeFrenetPoint(frenetPath.at(i).s, frenetPath.at(i).d);
+    }
+
+    _laneShiftQueued = true;
   }
 
   lastWayPoints = next_x_vals.size();
   return std::make_tuple(next_x_vals, next_y_vals);
-}
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::vector<double> Trajectory::JMT(std::vector< double> start, std::vector <double> end, double T)
-{
-    /*
-    Calculate the Jerk Minimizing Trajectory that connects the initial state
-    to the final state in time T.
-
-    INPUTS
-
-    start - the vehicles start location given as a length three array
-        corresponding to initial values of [s, s_dot, s_double_dot]
-
-    end   - the desired end state for vehicle. Like "start" this is a
-        length three array.
-
-    T     - The duration, in seconds, over which this maneuver should occur.
-
-    OUTPUT
-    an array of length 6, each value corresponding to a coefficent in the polynomial
-    s(t) = a_0 + a_1 * t + a_2 * t**2 + a_3 * t**3 + a_4 * t**4 + a_5 * t**5
-
-    EXAMPLE
-
-    > JMT( [0, 10, 0], [10, 10, 0], 1)
-    [0.0, 10.0, 0.0, 0.0, 0.0, 0.0]
-    */
-
-    Eigen::MatrixXd A = Eigen::MatrixXd(3, 3);
-    A << T*T*T, T*T*T*T, T*T*T*T*T,
-         3*T*T, 4*T*T*T, 5*T*T*T*T,
-           6*T, 12*T*T,  20*T*T*T;
-
-    Eigen::MatrixXd B = Eigen::MatrixXd(3,1);
-    B << end[0]-(start[0]+start[1]*T+.5*start[2]*T*T),
-          end[1]-(start[1]+start[2]*T),
-          end[2]-start[2];
-
-    Eigen::MatrixXd Ai = A.inverse();
-
-    Eigen::MatrixXd C = Ai*B;
-
-    std::vector <double> result = {start[0], start[1], .5*start[2]};
-    for(int i = 0; i < C.size(); i++)
-    {
-        result.push_back(C.data()[i]);
-    }
-
-    return result;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void Trajectory::storeFrenetPoint(double s, double d)

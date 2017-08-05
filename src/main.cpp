@@ -10,6 +10,8 @@
 #include "GlobalMap.h"
 #include "PathWriter.h"
 #include "Trajectory.h"
+#include "Prediction.h"
+#include "PathPlanning.h"
 
 #define MPH_TO_MPS 0.44704
 
@@ -39,12 +41,15 @@ int main() {
   // Load up map values for waypoint's x,y,s and d normalized normal vectors
   GlobalMap globalMap;
   globalMap.init();
-  Trajectory trajectory(globalMap);
+  Prediction prediction;
+  Trajectory trajectory(globalMap, prediction);
+  PathPlanning pathPlanning(trajectory, prediction);
+
 
   PathWriter pathWriter;
 
   double lastSpeed = 0;
-  size_t lane = 0;
+  size_t lane = 1;
   bool laneShift = false;
 
   //Ugly hack for manual lane shift
@@ -108,13 +113,26 @@ int main() {
           	// Sensor Fusion Data, a list of all other cars on the same side of the road.
           	auto sensor_fusion = j[1]["sensor_fusion"];
 
+          	for(auto car : sensor_fusion)
+          	{
+          	  std::vector<double> car_data;
+          	  for(auto data : car)
+          	  {
+          	    car_data.push_back(data);
+          	  }
+          	  prediction.update(car_data);
+          	}
+
           	std::vector<double> prev_path_x, prev_path_y;
           	for(size_t i=0; i < previous_path_x.size(); ++i)
           	{
           	  prev_path_x.push_back(previous_path_x[i]);
           	  prev_path_y.push_back(previous_path_y[i]);
           	}
-            auto path = trajectory.update(prev_path_x, prev_path_y, car_s, car_d, car_yaw, lane, laneShift);
+            auto path = trajectory.update(prev_path_x, prev_path_y, car_s, car_d, car_yaw);
+
+
+            pathPlanning.plan();
 
             json msgJson;
             msgJson["next_x"] = std::get<0>(path);

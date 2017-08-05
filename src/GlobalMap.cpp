@@ -45,25 +45,45 @@ std::vector<double> GlobalMap::TransformFrenetToCartesian(double s, double d)
 {
   int prev_wp = -1;
 
-  while(s > _map_s[prev_wp+1] && (prev_wp < (int)(_map_s.size()-1) ))
+  while((prev_wp < (int)(_map_s.size()-1) ) && s > _map_s[prev_wp+1])
   {
-    prev_wp++;
+    ++prev_wp;
   }
 
   tk::spline x_s;
   tk::spline y_s;
-
   size_t max = this->max_index;
-  std::function<size_t (int)> ringIndexer = [&max](int i) { return i < 0 ? max-i : (i > max ? max-i : i) ; };
 
-  size_t pointsBefore = ringIndexer(prev_wp-4);
-  size_t pointsAfter = ringIndexer(prev_wp+5);
+  bool outOfRange = true;
+  std::function<size_t (int)> outOfRangeIndexer = [&max, &outOfRange](int i) { return i < 0 ? max+i+1 : (i > max ? i-max-1 : i) ; };
 
-  std::vector<double> x_vals(&_map_x[pointsBefore], &_map_x[pointsAfter]);
-  std::vector<double> y_vals(&_map_y[pointsBefore], &_map_y[pointsAfter]);
-  std::vector<double> s_vals(&_map_s[pointsBefore], &_map_s[pointsAfter]);
-  std::vector<double> dx_vals(&_map_dx[pointsBefore], &_map_dx[pointsAfter]);
-  std::vector<double> dy_vals(&_map_dy[pointsBefore], &_map_dy[pointsAfter]);
+  int pointStart = outOfRangeIndexer(prev_wp-3);
+
+  std::vector<double> x_vals;
+  std::vector<double> y_vals;
+  std::vector<double> s_vals;
+  std::vector<double> dx_vals;
+  std::vector<double> dy_vals;
+
+  //Get 4 waypoints before and 4 after given s
+  int waypoints = 6;
+  for(size_t i=0; i < waypoints; ++i)
+  {
+    int index = outOfRangeIndexer(pointStart+i);
+
+    x_vals.emplace_back(_map_x[index]);
+    y_vals.emplace_back(_map_y[index]);
+
+    if((index - waypoints -1 < 0) && (s > this->max_s/2)) //Out of range
+      s_vals.emplace_back(_map_s[index] + this->max_s);
+    else if(index + waypoints -1 > max_index && (s < this->max_s/2)) //Out of range
+      s_vals.emplace_back(_map_s[index] - this->max_s);
+    else
+      s_vals.emplace_back(_map_s[index]);
+
+    dx_vals.emplace_back(_map_dx[index]);
+    dy_vals.emplace_back(_map_dy[index]);
+  }
 
   //Shift middle lane to correct d position
   size_t count = x_vals.size();
@@ -76,49 +96,13 @@ std::vector<double> GlobalMap::TransformFrenetToCartesian(double s, double d)
   y_s.set_points(s_vals, y_vals);
   x_s.set_points(s_vals, x_vals);
 
-
-  //int wp2 = (prev_wp+1)%_map_x.size();
-
-  //TODO print values and inspect graphical
-
-  //TODO try to use splines
-  //double heading = std::atan2((_map_y[wp2]-_map_y[prev_wp]),(_map_x[wp2]-_map_x[prev_wp]));
-
-  // the x,y,s along the segment
-  //double seg_s = (s-_map_s[prev_wp]);
-
-//  double seg_x = _map_x[prev_wp]+seg_s*cos(heading);
-//  double seg_y = _map_y[prev_wp]+seg_s*sin(heading);
-
-  double x = x_s(s);
-  double y = y_s(s);
-
-  std::cout << "Value at " << s << ": " << "(" << x << "," << y << ")\n";
-
-  return {x,y};
+  return {x_s(s),y_s(s)};
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Transform from Cartesian x,y coordinates to Frenet s,d coordinates
 std::vector<double> GlobalMap::TransformCartesianToFrenet(double x, double y, double theta)
 {
   int next_wp = nextWaypoint(x,y, theta);
-//  size_t max = this->max_index;
-//  std::function<size_t (int)> ringIndexer = [&max](int i) { return i < 0 ? max-i : (i > max ? max-i : i) ; };
-//
-//  size_t pointsBefore = ringIndexer(next_wp-5);
-//  size_t pointsAfter = ringIndexer(next_wp+4);
-//
-//  std::vector<double> x_vals(&_map_x[pointsBefore], &_map_x[pointsAfter]);
-//  std::vector<double> y_vals(&_map_y[pointsBefore], &_map_y[pointsAfter]);
-//  std::vector<double> s_vals(&_map_s[pointsBefore], &_map_s[pointsAfter]);
-//  std::vector<double> dx_vals(&_map_dx[pointsBefore], &_map_dx[pointsAfter]);
-//  std::vector<double> dy_vals(&_map_dy[pointsBefore], &_map_dy[pointsAfter]);
-//
-//  tk::spline x_s;
-//  tk::spline path_s;
-//
-//  path_s.set_points(x_vals, y_vals);
-//  x_s.set_points(s_vals, x_vals);
 
   int prev_wp;
   prev_wp = next_wp-1;
@@ -126,6 +110,8 @@ std::vector<double> GlobalMap::TransformCartesianToFrenet(double x, double y, do
   {
     prev_wp  = _map_x.size()-1;
   }
+
+
 
   double n_x = _map_x[next_wp]-_map_x[prev_wp];
   double n_y = _map_y[next_wp]-_map_y[prev_wp];
@@ -201,6 +187,7 @@ int GlobalMap::nextWaypoint(double x, double y, double theta)
 
   double heading = atan2( (map_y-y),(map_x-x) );
 
+  //Check direction
   double angle = std::abs(theta-heading);
 
   if(angle > M_PI/4)
