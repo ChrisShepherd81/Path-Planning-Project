@@ -43,12 +43,16 @@ class PathWriter
 
   void writeSinglePath(std::vector<double> &path, std::string label, std::ofstream& file)
   {
+    if(path.size() < 1)
+      return;
+
     file << label << ": ";
     for(size_t i=0; i < path.size()-1; ++i)
     {
       file << path.at(i) << ", ";
     }
     file << path.back() << std::endl;
+    path.clear();
   }
 };
 

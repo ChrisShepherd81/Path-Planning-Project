@@ -25,14 +25,13 @@ class TrajectoryGenerator {
 
  private:
   GlobalMap& _map;
-  const double _timeDelta = 0.02;
   CostCalculation _costs;
   std::default_random_engine _rnd_gen;
 
   double calculateSpeedCost();
 
   Path<double> JMT(std::vector< double> start, std::vector <double> end, double T);
-  FrenetPath calculate(std::vector<double> const& c_s, std::vector<double> const& c_d, double time, FrenetState const& start, FrenetState const& stop);
+  FrenetPath calculate(double end_s, double end_d, double time, FrenetState const& start, FrenetState const& stop);
   CartesianPath transform(FrenetPath& path);
 };
 

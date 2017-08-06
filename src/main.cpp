@@ -71,7 +71,7 @@ int main() {
                               lane += 1;
                               laneShift = true;
                               }
-                            std::cout << "Lane: " << lane << std::endl;
+                            //std::cout << "Lane: " << lane << std::endl;
                           }
                         });
 
@@ -169,10 +169,10 @@ int main() {
     std::cout << "Connected!!!" << std::endl;
   });
 
-  h.onDisconnection([&h, &pathWriter](uWS::WebSocket<uWS::SERVER> ws, int code,
+  h.onDisconnection([&h, &trajectory](uWS::WebSocket<uWS::SERVER> ws, int code,
                          char *message, size_t length) {
 
-    //pathWriter.WritePathToFile("Path.txt");
+    trajectory.writeToFile();
     ws.close();
     std::cout << "Disconnected" << std::endl;
   });

@@ -10,6 +10,7 @@
 #include "TrajectoryGenerator.h"
 #include "GlobalMap.h"
 #include "Prediction.h"
+#include "PathWriter.h"
 
 #include "Eigen-3.3/Eigen/Dense"
 
@@ -41,6 +42,11 @@ public:
     //std::cout << "State " << state << " not applied, still in progress\n";
   }
 
+  void writeToFile()
+  {
+    _pathWriter.WritePathToFile("test12345.txt");
+  }
+
   std::vector<double> getCarPosition() const
   {
     return std::vector<double>{s_vals.front(), d_vals.front()};
@@ -52,7 +58,7 @@ public:
   void storeFrenetPoint(double s, double d);
   size_t currentLane(double d)
   {
-    std::cout << "Car d pos is " << d << std::endl;
+    //std::cout << "Car d pos is " << d << std::endl;
     if(d <= 2.0)
       return 0;
     if(d <= 6.0)
@@ -82,6 +88,8 @@ public:
   bool _stateChangeInProgress = false;
   size_t _targetLane = 1;
   bool _laneShiftQueued = true;
+  PathWriter _pathWriter;
+  double _lastSpeed = 0;
 
 };
 

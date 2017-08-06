@@ -40,8 +40,8 @@ void Prediction::updateCar(Car& car, std::vector<double> &raw_data)
 
   if(d < 0)
   {
-    if(car.isValid)
-      std::cout << "Car " << car.id << " got unvalid\n";
+//    if(car.isValid)
+//      std::cout << "Car " << car.id << " got unvalid\n";
 
     car.isValid = false;
     car.lane = -1;

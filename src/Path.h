@@ -9,6 +9,7 @@
 
 #include <cmath>
 #include <vector>
+#include <iostream>
 
 struct CartesianPoint
 {
@@ -25,6 +26,9 @@ struct CartesianPoint
     return std::sqrt((p.X-X)*(p.X-X)+(p.Y-Y)*(p.Y-Y));
   }
 
+  void print() { std::cout << X << ", " << Y; }
+
+
   double X;
   double Y;
 };
@@ -33,6 +37,7 @@ struct FrenetPoint
 {
   FrenetPoint() : s(0), d(0){}
   FrenetPoint(double s, double d) : s(s), d(d) {}
+  void print() { std::cout <<  s << ", " << d; }
   double s;
   double d;
 };
@@ -47,6 +52,12 @@ struct FrenetState
   FrenetPoint velocity;
   FrenetPoint acceleration;
 
+  void print()
+  {
+    std::cout << "Frenet State: position: "; position.print();
+    std::cout           << " velocity:" ; velocity.print();
+    std::cout           << " acceleration: " ;acceleration.print();
+  }
   std::vector<double> d_vec() { return std::vector<double>{position.d, velocity.d, acceleration.d}; }
   std::vector<double> s_vec() { return std::vector<double>{position.s, velocity.s, acceleration.s}; }
 };

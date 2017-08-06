@@ -9,14 +9,19 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 std::tuple<CartesianPath, FrenetPath> TrajectoryGenerator::generate(FrenetState start, FrenetState stop, double time)
 {
-  std::normal_distribution<double> distribution_s(stop.position.s,1.0*time);
+
+  std::normal_distribution<double> distribution_s(stop.position.s,2.5*time);
   std::normal_distribution<double> distribution_d(stop.position.d,0.1);
 
   std::tuple<CartesianPath, FrenetPath> best_path;
   double best_cost = 1000;
 
-  for(size_t i=0; i < 10; ++i)
+  Costs cost;
+
+  for(size_t i=0; i < 5; ++i)
   {
+    //Set target s and d with noise
+    //Calculate with JMT from starting position = 0
     double end_s = distribution_s(_rnd_gen) - start.position.s;
     double end_d = distribution_d(_rnd_gen) - start.position.d;
 
@@ -29,25 +34,19 @@ std::tuple<CartesianPath, FrenetPath> TrajectoryGenerator::generate(FrenetState 
 
     time = std::max(time_for_s, std::max(time_for_v, time_for_d));
 
-    std::cout << "Caluclation target " << end_s << "," << end_d << " in " << time << std::endl;
-
-
-    auto coeff_s = JMT(std::vector<double>{0, start.velocity.s, 0}, std::vector<double>{end_s, stop.velocity.s, 0}, time);
-    auto coeff_d = JMT(std::vector<double>{0, start.velocity.d, 0}, std::vector<double>{end_d, stop.velocity.d, 0}, time);
-
-    auto frenet_path = calculate(coeff_s, coeff_d, time, start, stop);
+    auto frenet_path = calculate(end_s, end_d, time, start, stop);
     auto cartesian_path = transform(frenet_path);
 
-    double cost = _costs.calculate(frenet_path, cartesian_path);
+    cost = _costs.calculate(frenet_path, cartesian_path);
 
-    if(cost < best_cost)
+    if(cost.total() < best_cost)
     {
       best_path = std::make_tuple(cartesian_path, frenet_path);
-      best_cost = cost;
+      best_cost = cost.total();
     }
   }
 
-  std::cout << "Choosen path cost=" << best_cost << std::endl;
+  std::cout << "Choosen path cost=" << best_cost <<  "with max speed cost= " << cost.maxSpeedCost << std::endl;
   return best_path;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -81,26 +80,39 @@ Path<double> TrajectoryGenerator::JMT(std::vector< double> start, std::vector <d
     return result;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-FrenetPath TrajectoryGenerator::calculate(std::vector<double> const& c_s, std::vector<double> const& c_d,
-                                          double time, FrenetState const& start, FrenetState const& stop)
+FrenetPath TrajectoryGenerator::calculate(double end_s, double end_d, double time, FrenetState const& start,
+                                          FrenetState const& stop)
 {
   std::vector<FrenetPoint> result;
 
   bool sameLane = false;
-  if((start.position.d - stop.position.d) < 1.0)
+  //If start d and stop d position not differ within 1m consider car stays in same lane
+  if(std::fabs(start.position.d - stop.position.d) < 1.0)
     sameLane = true;
 
-  for(double t=0; t <= time; t+=_timeDelta)
+  Path<double> c_s;
+  Path<double> c_d;
+
+  if(!sameLane)
+  {
+    c_s = JMT(std::vector<double>{0, start.velocity.s, start.acceleration.s}, std::vector<double>{end_s, stop.velocity.s, 0}, time);
+    c_d = JMT(std::vector<double>{0, start.velocity.d, 0}, std::vector<double>{end_d, stop.velocity.d, 0}, time);
+  }
+  else
+  {
+    c_s = JMT(std::vector<double>{0, start.velocity.s, start.acceleration.s}, std::vector<double>{end_s, stop.velocity.s, 0}, time);
+    c_d = Path<double>{0, (end_d)/time, 0,0,0,0 }; //otherwise it's wiggles!
+  }
+
+  for(double t=0; t <= time; t+=Configuration::INTERVAL)
   {
     FrenetPoint p;
     p.s = c_s[0] + c_s[1]*t + c_s[2]*std::pow(t,2) + c_s[3]*std::pow(t,3)+ c_s[4]*std::pow(t,4) + c_s[5]*std::pow(t,5) + start.position.s;
-    if(!sameLane)
-      p.d = c_d[0] + c_d[1]*t + c_d[2]*std::pow(t,2) + c_d[3]*std::pow(t,3)+ c_d[4]*std::pow(t,4) + c_d[5]*std::pow(t,5) + start.position.d;
-    else //otherwise it's wiggles!
-      p.d = start.position.d + ((stop.position.d-start.position.d)/(time/_timeDelta))*t;
+    p.d = c_d[0] + c_d[1]*t + c_d[2]*std::pow(t,2) + c_d[3]*std::pow(t,3)+ c_d[4]*std::pow(t,4) + c_d[5]*std::pow(t,5) + start.position.d;
 
     result.emplace_back(p);
   }
+
   return result;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

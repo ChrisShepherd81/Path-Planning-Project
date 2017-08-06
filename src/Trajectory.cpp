@@ -33,7 +33,7 @@ std::tuple<std::vector<double>, std::vector<double>> Trajectory::update(
     lane = std::floor(d_vals.front()/4.0);;
   }
   else
-    lane = std::floor(car_d/4.0);
+    lane = 2.0; //std::floor(car_d/4.0);
 
 
   if(_stateChangeInProgress)
@@ -60,14 +60,8 @@ std::tuple<std::vector<double>, std::vector<double>> Trajectory::update(
        d_vals.pop_front();
      }
 
-     double pos_s_before2 = s_vals[s_vals.size()-3];
-     double pos_s_before1 = s_vals[s_vals.size()-2];
      pos_s = s_vals.back();
      pos_d = d_vals.back();
-
-     speed_in_s = (pos_s - pos_s_before1)/INTERVAL;
-     acc_in_s = ((pos_s - pos_s_before1)/INTERVAL - (pos_s_before1 -pos_s_before2)/INTERVAL)/INTERVAL;
-
   }
 
   Car carBefore = prediction.getNextCarInLane(lane, pos_s);
@@ -75,8 +69,8 @@ std::tuple<std::vector<double>, std::vector<double>> Trajectory::update(
   if(carBefore.isValid && ((carBefore.getLastS() - pos_s) <= SAFETY_DISTANCE))
   {
     //Slow down to next car speed
-    _target_speed = carBefore.speed;
-    if(_target_speed > TARGET_SPEED)
+//    _target_speed = carBefore.speed;
+//    if(_target_speed > TARGET_SPEED)
       _target_speed = TARGET_SPEED;
   }
   else
@@ -99,13 +93,13 @@ std::tuple<std::vector<double>, std::vector<double>> Trajectory::update(
       _targetLane = lane+1;
     }
 
-    std::cout << "Check state change for target lane" << _targetLane <<"\n";
+    //std::cout << "Check state change for target lane" << _targetLane <<"\n";
     //Check if possible
     Car carAhead = prediction.getNextCarInLane(_targetLane, pos_s);
     double distanceAhead = SAFETY_DISTANCE_AHEAD;
     if(carAhead.isValid)
     {
-      std::cout << "Car ahead ";
+      //std::cout << "Car ahead ";
       distanceAhead = carAhead.getLastS() - pos_s;
       carAhead.print(pos_s);
     }
@@ -115,7 +109,7 @@ std::tuple<std::vector<double>, std::vector<double>> Trajectory::update(
     if(carBehind.isValid)
     {
        distanceBehind = pos_s - carBehind.getLastS();
-       std::cout << "Car behind ";
+       //std::cout << "Car behind ";
        carBehind.print(pos_s);
     }
     
@@ -127,7 +121,7 @@ std::tuple<std::vector<double>, std::vector<double>> Trajectory::update(
       _stateChangeInProgress = true;
       _laneShiftQueued = false;
 
-      std::cout << "Prepare state change\n";
+      //std::cout << "Prepare state change\n";
 
       //Remove previous path
       size_t start = 5;
@@ -135,9 +129,6 @@ std::tuple<std::vector<double>, std::vector<double>> Trajectory::update(
       next_y_vals.erase(next_y_vals.begin()+start, next_y_vals.end());
       s_vals.erase(s_vals.begin()+start, s_vals.end());
       d_vals.erase(d_vals.begin()+start, d_vals.end());
-
-      pos_s = s_vals.back();
-      pos_d = d_vals.back();
 
       double pos_s_before = s_vals[s_vals.size()-2];
       pos_s = s_vals.back();
@@ -149,7 +140,7 @@ std::tuple<std::vector<double>, std::vector<double>> Trajectory::update(
     }
     else
     {
-      std::cout << "Canceled state change\n";
+      //std::cout << "Canceled state change\n";
       _targetLane = lane;
       _stateChangeInProgress = false;
       _state = State::KeepLane;
@@ -170,10 +161,12 @@ std::tuple<std::vector<double>, std::vector<double>> Trajectory::update(
 
     double pos_s_2 = pos_s + ((speed_in_s+_target_speed)/2.0)*timeInSec;
 
-    FrenetState start(pos_s, pos_d, speed_in_s, 0, acc_in_s,0);
+    FrenetState start(pos_s, pos_d, _lastSpeed, 0, 0,0);
     FrenetState stop(pos_s_2, pos_d_2, _target_speed, 0, 0,0);
+    _lastSpeed = _target_speed;
 
-    std::cout << "Target d is " << pos_d_2 << std::endl;
+
+    //std::cout << "Target d is " << pos_d_2 << std::endl;
 
     auto path = generator.generate(start, stop, timeInSec);
     auto cartesianPath = std::get<0>(path);
@@ -184,8 +177,10 @@ std::tuple<std::vector<double>, std::vector<double>> Trajectory::update(
       next_x_vals.push_back(cartesianPath.at(i).X);
       next_y_vals.push_back(cartesianPath.at(i).Y);
       storeFrenetPoint(frenetPath.at(i).s, frenetPath.at(i).d);
+      _pathWriter.AddNewPointToPath(cartesianPath.at(i).X, cartesianPath.at(i).Y,frenetPath.at(i).s, frenetPath.at(i).d);
     }
 
+    _pathWriter.AddNewPointToPath(0,0,0,0);
     _laneShiftQueued = true;
   }
 

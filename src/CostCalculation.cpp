@@ -6,13 +6,16 @@
 
 #include "CostCalculation.h"
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-double CostCalculation::calculate(FrenetPath const& frenetPath, CartesianPath const& cartesianPath )
+Costs CostCalculation::calculate(FrenetPath const& frenetPath, CartesianPath const& cartesianPath )
 {
   //std::cout << "Calculate costs\n";
-  return 10*speedCost(cartesianPath) + jerkInDCost(frenetPath);
+  Costs result;
+  speedCost(cartesianPath, result);
+  jerkInDCost(frenetPath, result);
+  return result;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-double CostCalculation::jerkInDCost(FrenetPath const& frenetPath)
+void CostCalculation::jerkInDCost(FrenetPath const& frenetPath, Costs &result)
 {
   double max_diff_in_d = 0;
   for(size_t i = 1; i < frenetPath.size(); ++i)
@@ -25,10 +28,9 @@ double CostCalculation::jerkInDCost(FrenetPath const& frenetPath)
     }
   }
 
-  return max_diff_in_d;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-double CostCalculation::speedCost(CartesianPath const& cartesianPath)
+void CostCalculation::speedCost(CartesianPath const& cartesianPath, Costs &result)
 {
   double max_speed = 0;
   double average_speed = 0;
@@ -56,19 +58,18 @@ double CostCalculation::speedCost(CartesianPath const& cartesianPath)
   if(max_speed > MAX_SPEED)
   {
     std::cout << "Speed exceeded\n";
-    return MAX_COST;
+    result.maxSpeedCost = Costs::MAX_COST;
   }
+  else
+    result.maxSpeedCost = Costs::MIN_COST;
 
   if(max_acceleration > MAX_ACC)
   {
-    std::cout << "ACC exceeded\n";
-    return MAX_COST;
+    //std::cout << "ACC exceeded\n";
+    result.accelerationCosts = Costs::MAX_COST;
   }
 
-
-  double cost = ((MAX_SPEED-average_speed)/MAX_SPEED + (MAX_ACC-max_acceleration)/MAX_ACC)/2.0;
-  std::cout << "Accepted Path cost " << cost << "\n";
-
-  return cost;
+  result.avgSpeedCost = (MAX_SPEED-average_speed)/MAX_SPEED;
+  result.accelerationCosts = (MAX_ACC-max_acceleration)/MAX_ACC;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -66,7 +66,7 @@ std::vector<double> GlobalMap::TransformFrenetToCartesian(double s, double d)
   std::vector<double> dy_vals;
 
   //Get 4 waypoints before and 4 after given s
-  int waypoints = 6;
+  int waypoints = 8;
   for(size_t i=0; i < waypoints; ++i)
   {
     int index = outOfRangeIndexer(pointStart+i);
