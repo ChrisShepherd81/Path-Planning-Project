@@ -161,6 +161,7 @@ std::tuple<std::vector<double>, std::vector<double>> Trajectory::update(
 
     double pos_s_2 = pos_s + ((speed_in_s+_target_speed)/2.0)*timeInSec;
 
+    timeInSec = (WAY_POINTS-path_size)*INTERVAL;
     FrenetState start(pos_s, pos_d, _lastSpeed, 0, 0,0);
     FrenetState stop(pos_s_2, pos_d_2, _target_speed, 0, 0,0);
     _lastSpeed = _target_speed;

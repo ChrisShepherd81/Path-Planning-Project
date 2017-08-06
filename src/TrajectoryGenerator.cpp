@@ -57,13 +57,17 @@ Path<double> TrajectoryGenerator::JMT(std::vector< double> start, std::vector <d
     to the final state in time T.
     */
 
+    double T2 = T*T;
+    double T3 = T2*T;
+    double T4 = T2*T2;
+
     Eigen::MatrixXd A = Eigen::MatrixXd(3, 3);
-    A << T*T*T, T*T*T*T, T*T*T*T*T,
-         3*T*T, 4*T*T*T, 5*T*T*T*T,
-           6*T, 12*T*T,  20*T*T*T;
+    A << T3,   T4,    T4*T,
+         3*T2, 4*T3,  5*T4,
+         6*T,  12*T2, 20*T3;
 
     Eigen::MatrixXd B = Eigen::MatrixXd(3,1);
-    B << end[0]-(start[0]+start[1]*T+.5*start[2]*T*T),
+    B << end[0]-(start[0]+start[1]*T+.5*start[2]*T2),
           end[1]-(start[1]+start[2]*T),
           end[2]-start[2];
 
@@ -107,8 +111,12 @@ FrenetPath TrajectoryGenerator::calculate(double end_s, double end_d, double tim
   for(double t=0; t <= time; t+=Configuration::INTERVAL)
   {
     FrenetPoint p;
-    p.s = c_s[0] + c_s[1]*t + c_s[2]*std::pow(t,2) + c_s[3]*std::pow(t,3)+ c_s[4]*std::pow(t,4) + c_s[5]*std::pow(t,5) + start.position.s;
-    p.d = c_d[0] + c_d[1]*t + c_d[2]*std::pow(t,2) + c_d[3]*std::pow(t,3)+ c_d[4]*std::pow(t,4) + c_d[5]*std::pow(t,5) + start.position.d;
+    double t2 = t*t;
+    double t3 = t2*t;
+    double t4 = t3*t;
+    double t5 = t4*t;
+    p.s = c_s[0] + c_s[1]*t + c_s[2]*t2 + c_s[3]*t3 + c_s[4]*t4 + c_s[5]*t5 + start.position.s;
+    p.d = c_d[0] + c_d[1]*t + c_d[2]*t2 + c_d[3]*t3 + c_d[4]*t4 + c_d[5]*t5 + start.position.d;
 
     result.emplace_back(p);
   }

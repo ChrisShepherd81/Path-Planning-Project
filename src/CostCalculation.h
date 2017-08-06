@@ -14,9 +14,11 @@
 
 struct Configuration
 {
-  static constexpr double MAX_SPEED = 49.0 * MPH_TO_MPS;
+  static constexpr double MAX_SPEED = 50.0 * MPH_TO_MPS;
   static constexpr double MAX_ACC = 9.5;
   static constexpr double INTERVAL = 0.02;
+  static constexpr double MAX_DIST_BETWEEN_PTS = 0.447; //For 50 MPH
+  static constexpr double MAX_DELAT_BETWEEN_PTS = 0.0015; //For jerk minimizing
 };
 
 struct Costs
