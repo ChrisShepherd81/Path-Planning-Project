@@ -41,7 +41,7 @@ void GlobalMap::init()
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Transform from Frenet s,d coordinates to Cartesian x,y
-std::vector<double> GlobalMap::TransformFrenetToCartesian(double s, double d)
+CartesianPoint GlobalMap::TransformFrenetToCartesian(double s, double d)
 {
   int prev_wp = -1;
 
@@ -74,10 +74,10 @@ std::vector<double> GlobalMap::TransformFrenetToCartesian(double s, double d)
     x_vals.emplace_back(_map_x[index]);
     y_vals.emplace_back(_map_y[index]);
 
-    if((index - waypoints -1 < 0) && (s > this->max_s/2)) //Out of range
-      s_vals.emplace_back(_map_s[index] + this->max_s);
-    else if(index + waypoints -1 > max_index && (s < this->max_s/2)) //Out of range
-      s_vals.emplace_back(_map_s[index] - this->max_s);
+    if((index - waypoints -1 < 0) && (s > Simulator::MAX_S/2)) //Out of range
+      s_vals.emplace_back(_map_s[index] + Simulator::MAX_S);
+    else if(index + waypoints -1 > max_index && (s < Simulator::MAX_S/2)) //Out of range
+      s_vals.emplace_back(_map_s[index] - Simulator::MAX_S);
     else
       s_vals.emplace_back(_map_s[index]);
 
@@ -96,22 +96,20 @@ std::vector<double> GlobalMap::TransformFrenetToCartesian(double s, double d)
   y_s.set_points(s_vals, y_vals);
   x_s.set_points(s_vals, x_vals);
 
-  return {x_s(s),y_s(s)};
+  return CartesianPoint{x_s(s),y_s(s)};
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Transform from Cartesian x,y coordinates to Frenet s,d coordinates
-std::vector<double> GlobalMap::TransformCartesianToFrenet(double x, double y, double theta)
+FrenetPoint GlobalMap::TransformCartesianToFrenet(double x, double y, double theta)
 {
   int next_wp = nextWaypoint(x,y, theta);
 
   int prev_wp;
   prev_wp = next_wp-1;
-  if(next_wp == 0)
+  if(next_wp == 0) //Overflow
   {
     prev_wp  = _map_x.size()-1;
   }
-
-
 
   double n_x = _map_x[next_wp]-_map_x[prev_wp];
   double n_y = _map_y[next_wp]-_map_y[prev_wp];
@@ -146,12 +144,7 @@ std::vector<double> GlobalMap::TransformCartesianToFrenet(double x, double y, do
 
   frenet_s += distance(0,0,proj_x,proj_y);
 
-  return {frenet_s,frenet_d};
-}
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-double GlobalMap::distance(double x1, double y1, double x2, double y2)
-{
-  return sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
+  return FrenetPoint{frenet_s,frenet_d};
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 int GlobalMap::closestWaypoint(double x, double y)

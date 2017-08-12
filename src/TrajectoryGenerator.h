@@ -8,12 +8,11 @@
 #define SRC_TRAJECTORYGENERATOR_H_
 
 #include "Path.h"
-#include "CostCalculation.h"
 #include "GlobalMap.h"
+#include "Configuration.h"
 
 #include "Eigen-3.3/Eigen/Dense"
 
-#include <random>
 #include <vector>
 
 class TrajectoryGenerator {
@@ -21,18 +20,12 @@ class TrajectoryGenerator {
 
   TrajectoryGenerator(GlobalMap& map) : _map(map) {}
 
-  std::tuple<CartesianPath, FrenetPath> generate(FrenetState start, FrenetState stop, double time);
-
+  CartesianPath generate(CarState car, int target_lane, double target_speed,
+                          std::vector<double> &previous_path_x, std::vector<double> &previous_path_y);
  private:
   GlobalMap& _map;
-  CostCalculation _costs;
-  std::default_random_engine _rnd_gen;
-
-  double calculateSpeedCost();
-
   Path<double> JMT(std::vector< double> start, std::vector <double> end, double T);
-  FrenetPath calculate(double end_s, double end_d, double time, FrenetState const& start, FrenetState const& stop);
-  CartesianPath transform(FrenetPath& path);
+
 };
 
 #endif /* SRC_TRAJECTORYGENERATOR_H_ */

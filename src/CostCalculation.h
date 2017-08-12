@@ -7,48 +7,27 @@
 #ifndef SRC_COSTCALCULATION_H_
 #define SRC_COSTCALCULATION_H_
 
+#include "Configuration.h"
 #include "Path.h"
 #include <iostream>
 
-#define MPH_TO_MPS 0.44704
+#include "Prediction.h"
 
-struct Configuration
-{
-  static constexpr double MAX_SPEED = 50.0 * MPH_TO_MPS;
-  static constexpr double MAX_ACC = 9.5;
-  static constexpr double INTERVAL = 0.02;
-  static constexpr double MAX_DIST_BETWEEN_PTS = 0.447; //For 50 MPH
-  static constexpr double MAX_DELAT_BETWEEN_PTS = 0.0015; //For jerk minimizing
-};
-
-struct Costs
-{
-  static constexpr double MAX_COST = 1.0;
-  static constexpr double MIN_COST = 0.0;
-
-  double avgSpeedCost = MAX_COST;
-  double maxSpeedCost = MAX_COST;
-  double accelerationCosts = MAX_COST;
-  double total()
-  {
-    return (avgSpeedCost+accelerationCosts+maxSpeedCost)/3.0;
-  }
-
-};
 
 class CostCalculation {
 
  public:
 
-  Costs calculate(FrenetPath const& frenetPath, CartesianPath const& cartesianPath );
+  CostCalculation(Prediction& prediction) : _prediction(prediction) {}
 
-  void jerkInDCost(FrenetPath const& frenetPath, Costs &result);
-  void speedCost(CartesianPath const& cartesianPath, Costs &result);
+  std::vector<double> getCostsForLanes(CarState car_state);
 
  private:
-  const double MAX_SPEED = 49.0 * MPH_TO_MPS;
-  const double MAX_ACC = 9.5;
-  const double deltaTime = 0.02;
+  const Prediction& _prediction;
+  double MIN_COST = 0.0;
+  double MAX_COST = 1.0;
+  double CHANGE_COST = 0.05;
+
 
 };
 

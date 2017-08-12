@@ -6,55 +6,15 @@
 
 #include "TrajectoryGenerator.h"
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::tuple<CartesianPath, FrenetPath> TrajectoryGenerator::generate(FrenetState start, FrenetState stop, double time)
-{
+constexpr double Simulator::LANE_D_VALUE [];
 
-  std::normal_distribution<double> distribution_s(stop.position.s,2.5*time);
-  std::normal_distribution<double> distribution_d(stop.position.d,0.1);
-
-  std::tuple<CartesianPath, FrenetPath> best_path;
-  double best_cost = 1000;
-
-  Costs cost;
-
-  for(size_t i=0; i < 5; ++i)
-  {
-    //Set target s and d with noise
-    //Calculate with JMT from starting position = 0
-    double end_s = distribution_s(_rnd_gen) - start.position.s;
-    double end_d = distribution_d(_rnd_gen) - start.position.d;
-
-    //Calculate estimated time
-    double delta_v = start.velocity.s - stop.velocity.s;
-
-    double time_for_s = std::fabs(end_s)/((start.velocity.s+stop.velocity.s)/2.0);
-    double time_for_v = std::fabs(delta_v)/(10);
-    double time_for_d = std::fabs(end_d)/(2.0);
-
-    time = std::max(time_for_s, std::max(time_for_v, time_for_d));
-
-    auto frenet_path = calculate(end_s, end_d, time, start, stop);
-    auto cartesian_path = transform(frenet_path);
-
-    cost = _costs.calculate(frenet_path, cartesian_path);
-
-    if(cost.total() < best_cost)
-    {
-      best_path = std::make_tuple(cartesian_path, frenet_path);
-      best_cost = cost.total();
-    }
-  }
-
-  std::cout << "Choosen path cost=" << best_cost <<  "with max speed cost= " << cost.maxSpeedCost << std::endl;
-  return best_path;
-}
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 Path<double> TrajectoryGenerator::JMT(std::vector< double> start, std::vector <double> end, double T)
 {
     /*
     Calculate the Jerk Minimizing Trajectory that connects the initial state
     to the final state in time T.
+    !!! Does not really work well with simulator so only splines are used !!!
     */
 
     double T2 = T*T;
@@ -84,53 +44,120 @@ Path<double> TrajectoryGenerator::JMT(std::vector< double> start, std::vector <d
     return result;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-FrenetPath TrajectoryGenerator::calculate(double end_s, double end_d, double time, FrenetState const& start,
-                                          FrenetState const& stop)
+CartesianPath TrajectoryGenerator::generate(CarState car, int target_lane, double target_speed,
+                          std::vector<double> &previous_path_x, std::vector<double> &previous_path_y)
 {
-  std::vector<FrenetPoint> result;
+  std::vector<double> ptsx;
+  std::vector<double> ptsy;
 
-  bool sameLane = false;
-  //If start d and stop d position not differ within 1m consider car stays in same lane
-  if(std::fabs(start.position.d - stop.position.d) < 1.0)
-    sameLane = true;
+  double ref_x = car.c_pos.X;
+  double ref_y = car.c_pos.Y;
+  double ref_yaw = deg2rad(car.Yaw);
+  double ref_vel = 0;
 
-  Path<double> c_s;
-  Path<double> c_d;
+  int prev_size = previous_path_x.size();
 
-  if(!sameLane)
+  if(prev_size < 2)
   {
-    c_s = JMT(std::vector<double>{0, start.velocity.s, start.acceleration.s}, std::vector<double>{end_s, stop.velocity.s, 0}, time);
-    c_d = JMT(std::vector<double>{0, start.velocity.d, 0}, std::vector<double>{end_d, stop.velocity.d, 0}, time);
+    double prev_car_x = car.c_pos.X - cos(car.Yaw);
+    double prev_car_y = car.c_pos.Y - sin(car.Yaw);
+
+    ptsx.push_back(prev_car_x);
+    ptsx.push_back(car.c_pos.X);
+
+    ptsy.push_back(prev_car_y);
+    ptsy.push_back(car.c_pos.Y);
   }
   else
   {
-    c_s = JMT(std::vector<double>{0, start.velocity.s, start.acceleration.s}, std::vector<double>{end_s, stop.velocity.s, 0}, time);
-    c_d = Path<double>{0, (end_d)/time, 0,0,0,0 }; //otherwise it's wiggles!
+    ref_x = previous_path_x[prev_size-1];
+    ref_y = previous_path_y[prev_size-1];
+
+    double ref_x_prev = previous_path_x[prev_size-2];
+    double ref_y_prev = previous_path_y[prev_size-2];
+
+    ref_yaw = atan2(ref_y-ref_y_prev, ref_x-ref_x_prev);
+
+    ptsx.push_back(ref_x_prev);
+    ptsx.push_back(ref_x);
+
+    ptsy.push_back(ref_y_prev);
+    ptsy.push_back(ref_y);
+
+    ref_vel = (distance(ref_x_prev, ref_y_prev, ref_x, ref_y )/Simulator::INTERVAL);
   }
 
-  for(double t=0; t <= time; t+=Configuration::INTERVAL)
+  for(size_t i=1; i <= 3; ++i)
   {
-    FrenetPoint p;
-    double t2 = t*t;
-    double t3 = t2*t;
-    double t4 = t3*t;
-    double t5 = t4*t;
-    p.s = c_s[0] + c_s[1]*t + c_s[2]*t2 + c_s[3]*t3 + c_s[4]*t4 + c_s[5]*t5 + start.position.s;
-    p.d = c_d[0] + c_d[1]*t + c_d[2]*t2 + c_d[3]*t3 + c_d[4]*t4 + c_d[5]*t5 + start.position.d;
+    CartesianPoint next_wp = _map.TransformFrenetToCartesian(car.f_pos.s+(30*i), Simulator::LANE_D_VALUE[target_lane]);
+    ptsx.push_back(next_wp.X);
+    ptsy.push_back(next_wp.Y);
 
-    result.emplace_back(p);
   }
 
-  return result;
-}
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-CartesianPath TrajectoryGenerator::transform(FrenetPath & path)
-{
-  std::vector<CartesianPoint> result;
-  for(auto point : path)
+  //Transformation
+  for(int i=0; i < ptsx.size(); ++i)
   {
-    CartesianPoint p(_map.TransformFrenetToCartesian(point.s, point.d));
-    result.emplace_back(p);
+    double shift_x = ptsx[i]-ref_x;
+    double shift_y = ptsy[i]-ref_y;
+
+    ptsx[i] = (shift_x * cos(0-ref_yaw) - shift_y * sin(0-ref_yaw));
+    ptsy[i] = (shift_x * sin(0-ref_yaw) + shift_y * cos(0-ref_yaw));
+  }
+
+  tk::spline s;
+
+  s.set_points(ptsx, ptsy);
+
+  std::vector<double> next_x_vals;
+  std::vector<double> next_y_vals;
+
+  //copy last path
+  for(int i=0; i < previous_path_x.size(); ++i)
+  {
+    next_x_vals.push_back(previous_path_x[i]);
+    next_y_vals.push_back(previous_path_y[i]);
+  }
+
+  double target_x = 30.0;
+  double target_y = s(target_x);
+  double target_dist = sqrt((target_x*target_x)+(target_y*target_y));
+
+  double x_add_on = 0;
+
+  for(int i = 0; i < 50-prev_size; i++)
+  {
+    if(ref_vel < Configuration::MAX_SPEED && ref_vel < target_speed)
+      ref_vel += Simulator::MAX_SPEED_CHANGE;
+    else if(ref_vel > target_speed )
+      ref_vel -= Simulator::MAX_SPEED_CHANGE;
+    else
+      ref_vel = Configuration::MAX_SPEED;
+
+    double N = (target_dist/(Simulator::INTERVAL*ref_vel)); //mph -> mps
+    double x_point = x_add_on+target_x/N;
+    double y_point = s(x_point);
+
+    x_add_on = x_point;
+
+    double x_ref = x_point;
+    double y_ref = y_point;
+
+    x_point = (x_ref * cos(ref_yaw) - y_ref * sin(ref_yaw));
+    y_point = (x_ref * sin(ref_yaw) + y_ref * cos(ref_yaw));
+
+    x_point += ref_x;
+    y_point += ref_y;
+
+    next_x_vals.push_back(x_point);
+    next_y_vals.push_back(y_point);
+  }
+
+  CartesianPath result;
+
+  for(size_t i=0; i < next_x_vals.size(); ++i)
+  {
+    result.push_back(CartesianPoint{next_x_vals[i], next_y_vals[i]});
   }
 
   return result;

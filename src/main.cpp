@@ -8,12 +8,10 @@
 #include "json.hpp"
 
 #include "GlobalMap.h"
+#include "Path.h"
 #include "PathWriter.h"
-#include "Trajectory.h"
 #include "Prediction.h"
-#include "PathPlanning.h"
-
-#define MPH_TO_MPS 0.44704
+#include "TrajectoryGenerator.h"
 
 using namespace std;
 
@@ -35,6 +33,10 @@ string hasData(string s) {
   return "";
 }
 
+//constexpr double pi() { return M_PI; }
+//double deg2rad(double x) { return x * pi() / 180; }
+//double rad2deg(double x) { return x * 180 / pi(); }
+
 int main() {
   uWS::Hub h;
 
@@ -42,39 +44,11 @@ int main() {
   GlobalMap globalMap;
   globalMap.init();
   Prediction prediction;
-  Trajectory trajectory(globalMap, prediction);
-  PathPlanning pathPlanning(trajectory, prediction);
+  TrajectoryGenerator trajectory(globalMap);
+  CostCalculation costCalculation(prediction);
 
-
-  PathWriter pathWriter;
-
-  double lastSpeed = 0;
-  size_t lane = 1;
-  bool laneShift = false;
-
-  //Ugly hack for manual lane shift
-  std::thread keyboard( [&lane, &laneShift]()
-                        {
-                          while(true)
-                          {
-                            char key = 0;
-                            std::cin >> key;
-                            std::cin.clear();
-                            std::cin.ignore();
-                            if(key == 'l')
-                              {
-                              lane -= 1;
-                              laneShift = true;
-                              }
-                            if(key == 'r')
-                              {
-                              lane += 1;
-                              laneShift = true;
-                              }
-                            //std::cout << "Lane: " << lane << std::endl;
-                          }
-                        });
-
+  int lane = Simulator::START_LANE;
+  double target_speed = 0;
 
   h.onMessage([&](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
@@ -93,50 +67,149 @@ int main() {
         string event = j[0].get<string>();
         
         if (event == "telemetry") {
-          // j[1] is the data JSON object
+            // j[1] is the data JSON object
 
-        	// Main car's localization Data
-          	double car_x = j[1]["x"];
-          	double car_y = j[1]["y"];
-          	double car_s = j[1]["s"];
-          	double car_d = j[1]["d"];
-          	double car_yaw = j[1]["yaw"];
-          	double car_speed = j[1]["speed"];
+        	  // Main car's localization Data
+          	CarState car_state;
+          	car_state.c_pos = CartesianPoint{j[1]["x"], j[1]["y"]};
+          	double curr_car_s = j[1]["s"];
+          	car_state.f_pos = FrenetPoint{curr_car_s, j[1]["d"]};
+          	car_state.Yaw = j[1]["yaw"];
+          	car_state.curr_speed = j[1]["speed"];
+          	car_state.lane = lane;
 
           	// Previous path data given to the Planner
-          	auto previous_path_x = j[1]["previous_path_x"];
-          	auto previous_path_y = j[1]["previous_path_y"];
+          	std::vector<double> previous_path_x = j[1]["previous_path_x"];
+          	std::vector<double> previous_path_y = j[1]["previous_path_y"];
           	// Previous path's end s and d values 
           	double end_path_s = j[1]["end_path_s"];
           	double end_path_d = j[1]["end_path_d"];
 
           	// Sensor Fusion Data, a list of all other cars on the same side of the road.
-          	auto sensor_fusion = j[1]["sensor_fusion"];
+          	std::vector<std::vector<double>> sensor_fusion = j[1]["sensor_fusion"];
 
-          	for(auto car : sensor_fusion)
-          	{
-          	  std::vector<double> car_data;
-          	  for(auto data : car)
-          	  {
-          	    car_data.push_back(data);
-          	  }
-          	  prediction.update(car_data);
-          	}
+          	int prev_size = previous_path_x.size();
 
-          	std::vector<double> prev_path_x, prev_path_y;
-          	for(size_t i=0; i < previous_path_x.size(); ++i)
-          	{
-          	  prev_path_x.push_back(previous_path_x[i]);
-          	  prev_path_y.push_back(previous_path_y[i]);
-          	}
-            auto path = trajectory.update(prev_path_x, prev_path_y, car_s, car_d, car_yaw);
+            if(prev_size > 0)
+            {
+              car_state.f_pos.s = end_path_s;
+              car_state.f_pos.d = end_path_d;
+            }
 
+            bool too_close = false;
 
-            pathPlanning.plan();
+            prediction.update(sensor_fusion);
 
+            static size_t counter = 1;
+
+            CarState next_car = prediction.getNextCarInLane(lane, curr_car_s);
+
+            if(next_car.isValid)
+            {
+              double check_car_s = next_car.f_pos.s + ((double)prev_size)*Simulator::INTERVAL*next_car.avgSpeed();
+
+              if(check_car_s > car_state.f_pos.s) //Other car is before car
+              {
+                double distance_future = check_car_s-car_state.f_pos.s;
+                double distance_now = next_car.f_pos.s - curr_car_s;
+
+                if(distance_future < Configuration::SAFETY_DISTANCE)
+                {
+                  too_close = true;
+                  target_speed = next_car.avgSpeed();
+                }
+
+                if(distance_future < Configuration::EMERGENCY_DISTANCE ||
+                    distance_now <  Configuration::EMERGENCY_DISTANCE)
+                {
+                  std::cout << "EMERGENCY BREAK!\n";
+                  too_close = true;
+                  target_speed = 0.0;
+                }
+              }
+            }
+
+            if(counter%100 == 0)
+            {
+              std::vector<double> costs = costCalculation.getCostsForLanes(car_state);
+              size_t optimalLane = std::distance(costs.begin(), std::min_element(costs.begin(), costs.end()));
+
+              std::cout << "Lane costs : ";
+              for(size_t target_lane=0; target_lane < Simulator::LANES_COUNT; ++target_lane)
+              {
+                std::cout << costs[target_lane] << " ";
+              }
+              std::cout << std::endl;
+
+              if(optimalLane != lane)
+              {
+
+                int target_lane = lane;
+
+                if(optimalLane > lane)
+                  ++target_lane;
+                else
+                  --target_lane;
+
+                CarState car_ahead = prediction.getNextCarInLane(target_lane, car_state.f_pos.s);
+                CarState car_behind = prediction.getPreviousCarInLane(target_lane, car_state.f_pos.s);
+
+                if(!car_ahead.isValid) //No car ahead
+                {
+                  if(!car_behind.isValid) //No car behind
+                  {
+                    lane = target_lane;
+                  }
+                  else //A car behind
+                  {
+                    double check_car_s_behind = car_behind.f_pos.s + ((double)prev_size)*Simulator::INTERVAL*car_behind.avgSpeed();
+
+                    if(car_state.f_pos.s - check_car_s_behind >= Configuration::MIN_DIST_BEHIND)
+                      lane = target_lane;
+                  }
+                }
+                else // A car ahead
+                {
+                  double check_car_s_ahead = car_ahead.f_pos.s + ((double)prev_size)*Simulator::INTERVAL*car_ahead.avgSpeed();
+
+                  if(!car_behind.isValid) //No car behind
+                  {
+                    if(check_car_s_ahead-car_state.f_pos.s >= Configuration::MIN_DIST_AHEAD)
+                      lane = target_lane;
+                  }
+                  else //A car behind
+                  {
+                    double check_car_s_behind = car_behind.f_pos.s + ((double)prev_size)*Simulator::INTERVAL*car_behind.avgSpeed();
+
+                    if(check_car_s_ahead-car_state.f_pos.s >= Configuration::MIN_DIST_AHEAD &&
+                        car_state.f_pos.s - check_car_s_behind >= Configuration::MIN_DIST_BEHIND)
+                      lane = target_lane;
+                  }
+                }
+              }
+
+            }
+            ++counter;
+
+            //Reset target speed
+            if(!too_close && target_speed < Configuration::MAX_SPEED)
+            {
+              target_speed = Configuration::MAX_SPEED;
+            }
+
+            CartesianPath path = trajectory.generate(car_state, lane, target_speed, previous_path_x, previous_path_y);
+
+            std::vector<double> next_x_vals;
+            std::vector<double> next_y_vals;
+
+            for(auto p : path)
+            {
+              next_x_vals.push_back(p.X);
+              next_y_vals.push_back(p.Y);
+            }
             json msgJson;
-            msgJson["next_x"] = std::get<0>(path);
-          	msgJson["next_y"] = std::get<1>(path);
+            msgJson["next_x"] = next_x_vals;
+          	msgJson["next_y"] = next_y_vals;
           	auto msg = "42[\"control\","+ msgJson.dump()+"]";
 
           	//this_thread::sleep_for(chrono::milliseconds(1000));
@@ -171,8 +244,6 @@ int main() {
 
   h.onDisconnection([&h, &trajectory](uWS::WebSocket<uWS::SERVER> ws, int code,
                          char *message, size_t length) {
-
-    trajectory.writeToFile();
     ws.close();
     std::cout << "Disconnected" << std::endl;
   });

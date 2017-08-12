@@ -7,13 +7,15 @@
 #ifndef SRC_GLOBALMAP_H_
 #define SRC_GLOBALMAP_H_
 
+#include "CostCalculation.h"
+#include "spline.h"
+
 #include <vector>
 #include <fstream>
 #include <string>
 #include <iostream>
 #include <sstream>
 #include <cmath>
-#include "spline.h"
 
 class GlobalMap
 {
@@ -21,16 +23,14 @@ class GlobalMap
   void init();
 
   // Transform from Frenet s,d coordinates to Cartesian x,y
-  std::vector<double> TransformFrenetToCartesian(double s, double d);
-  std::vector<double> TransformCartesianToFrenet(double x, double y, double theta);
+  CartesianPoint TransformFrenetToCartesian(double s, double d);
+  FrenetPoint TransformCartesianToFrenet(double x, double y, double theta);
 
  private:
 
-  double distance(double x1, double y1, double x2, double y2);
   int closestWaypoint(double x, double y);
   int nextWaypoint(double x, double y, double theta);
 
-  const double max_s = 6945.554;
   size_t max_index;
 
   std::vector<double> _map_x;

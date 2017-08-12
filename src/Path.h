@@ -11,8 +11,11 @@
 #include <vector>
 #include <iostream>
 
+
 struct CartesianPoint
 {
+  CartesianPoint() = default;
+
   CartesianPoint(double x, double y) : X(x), Y(y) {}
 
   CartesianPoint(std::vector<double> v)
@@ -42,30 +45,58 @@ struct FrenetPoint
   double d;
 };
 
-struct FrenetState
+struct CarState
 {
-  FrenetState (double s, double d, double s_dot, double d_dot, double s_ddot, double d_ddot) :
-    position(s, d), velocity(s_dot, d_dot), acceleration(s_ddot, d_ddot)
-  { }
-
-  FrenetPoint position;
-  FrenetPoint velocity;
-  FrenetPoint acceleration;
-
-  void print()
+  CarState()
   {
-    std::cout << "Frenet State: position: "; position.print();
-    std::cout           << " velocity:" ; velocity.print();
-    std::cout           << " acceleration: " ;acceleration.print();
+    _speed_buffer = std::vector<double>(_bufferSize);
   }
-  std::vector<double> d_vec() { return std::vector<double>{position.d, velocity.d, acceleration.d}; }
-  std::vector<double> s_vec() { return std::vector<double>{position.s, velocity.s, acceleration.s}; }
+
+  CartesianPoint c_pos;
+  FrenetPoint f_pos;
+  double Yaw;
+  void setSpeed(double speed)
+  {
+    curr_speed = speed;
+    _speed_buffer[_index%(_bufferSize)] = speed;
+    _index++;
+  }
+
+  double avgSpeed()
+  {
+    double sum = 0;
+    for(auto a : _speed_buffer)
+      sum += a;
+
+    return sum/_speed_buffer.size();
+  }
+  double curr_speed;
+  size_t lane;
+  bool isValid;
+  int id;
+  static constexpr size_t _bufferSize = 10;
+  size_t _index = 0;
+  std::vector<double> _speed_buffer;
 };
 
 template <typename T>
 using Path = std::vector<T>;
 using CartesianPath = Path<CartesianPoint>;
-using FrenetPath = Path<FrenetPoint>;
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+double distance(double x1, double y1, double x2, double y2);
+double distance(CartesianPoint p0, CartesianPoint p1);
+
+double angle(double x1, double y1, double x2, double y2);
+double angle(CartesianPoint p0, CartesianPoint p1);
+
+CartesianPoint shiftAndRotate(CartesianPoint pointToShift, CartesianPoint refPoint, double angle);
+CartesianPoint rotateAndShift(CartesianPoint pointToShift, CartesianPoint refPoint, double angle);
+
+// For converting back and forth between radians and degrees.
+constexpr double pi();
+double deg2rad(double x);
+double rad2deg(double x);
 
 #endif /* SRC_PATH_H_ */
