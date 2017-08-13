@@ -44,8 +44,7 @@ Path<double> TrajectoryGenerator::JMT(std::vector< double> start, std::vector <d
     return result;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-CartesianPath TrajectoryGenerator::generate(CarState car, int target_lane, double target_speed,
-                          std::vector<double> &previous_path_x, std::vector<double> &previous_path_y)
+CartesianPath TrajectoryGenerator::generate(CarState car, int target_lane, double target_speed, CartesianPath &previous_path)
 {
   std::vector<double> ptsx;
   std::vector<double> ptsy;
@@ -55,7 +54,7 @@ CartesianPath TrajectoryGenerator::generate(CarState car, int target_lane, doubl
   double ref_yaw = deg2rad(car.Yaw);
   double ref_vel = 0;
 
-  int prev_size = previous_path_x.size();
+  int prev_size = previous_path.size();
 
   if(prev_size < 2)
   {
@@ -70,11 +69,11 @@ CartesianPath TrajectoryGenerator::generate(CarState car, int target_lane, doubl
   }
   else
   {
-    ref_x = previous_path_x[prev_size-1];
-    ref_y = previous_path_y[prev_size-1];
+    ref_x = previous_path[prev_size-1].X;
+    ref_y = previous_path[prev_size-1].Y;
 
-    double ref_x_prev = previous_path_x[prev_size-2];
-    double ref_y_prev = previous_path_y[prev_size-2];
+    double ref_x_prev = previous_path[prev_size-2].X;
+    double ref_y_prev = previous_path[prev_size-2].Y;
 
     ref_yaw = atan2(ref_y-ref_y_prev, ref_x-ref_x_prev);
 
@@ -113,10 +112,10 @@ CartesianPath TrajectoryGenerator::generate(CarState car, int target_lane, doubl
   std::vector<double> next_y_vals;
 
   //copy last path
-  for(int i=0; i < previous_path_x.size(); ++i)
+  for(int i=0; i < previous_path.size(); ++i)
   {
-    next_x_vals.push_back(previous_path_x[i]);
-    next_y_vals.push_back(previous_path_y[i]);
+    next_x_vals.push_back(previous_path[i].X);
+    next_y_vals.push_back(previous_path[i].Y);
   }
 
   double target_x = 30.0;

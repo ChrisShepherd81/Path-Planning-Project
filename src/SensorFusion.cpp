@@ -4,9 +4,9 @@
  *  Created on: 30.07.2017
  */
 
-#include "Prediction.h"
+#include "SensorFusion.h"
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void Prediction::update(std::vector<std::vector<double>> &sensorFusionData)
+void SensorFusion::update(std::vector<std::vector<double>> sensorFusionData)
 {
   //find
   for(size_t i=0; i < sensorFusionData.size(); ++i)
@@ -29,7 +29,7 @@ void Prediction::update(std::vector<std::vector<double>> &sensorFusionData)
 
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void Prediction::updateCar(CarState& car, std::vector<double> &raw_data)
+void SensorFusion::updateCar(CarState& car, std::vector<double> &raw_data)
 {
   // [ id, x, y, vx, vy, s, d]
   double vx = raw_data[3];
@@ -53,19 +53,19 @@ void Prediction::updateCar(CarState& car, std::vector<double> &raw_data)
 
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-CarState Prediction::getNextCarInLane(size_t lane, double s) const
+CarState SensorFusion::getNextCarInLane(size_t lane, double s) const
 {
   std::function<bool(double, double)> op = [](double a, double b){ return a > b; };
   return getCarInLane(lane, s, op);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-CarState Prediction::getPreviousCarInLane(size_t lane, double s) const
+CarState SensorFusion::getPreviousCarInLane(size_t lane, double s) const
 {
   std::function<bool(double, double)> op = [](double a, double b){ return a < b; };
   return getCarInLane(lane, s, op);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-CarState Prediction::getCarInLane(size_t lane, double s, std::function<bool(double, double)> &op) const
+CarState SensorFusion::getCarInLane(size_t lane, double s, std::function<bool(double, double)> &op) const
 {
   CarState result;
   result.isValid = false;

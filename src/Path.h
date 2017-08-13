@@ -81,7 +81,51 @@ struct CarState
 
 template <typename T>
 using Path = std::vector<T>;
-using CartesianPath = Path<CartesianPoint>;
+class CartesianPath
+{
+ public:
+  CartesianPath() = default;
+  CartesianPath(Path<double> X_vals, Path<double> Y_vals)
+ {
+    if(X_vals.size() == Y_vals.size())
+    {
+      for(size_t i=0; i < X_vals.size(); ++i)
+      {
+        push_back(CartesianPoint{X_vals[i], Y_vals[i]});
+      }
+    }
+
+ }
+  void push_back(CartesianPoint p)
+  {
+    _path.push_back(p);
+    _Xpath.push_back(p.X);
+    _Ypath.push_back(p.Y);
+    _size++;
+  }
+
+  Path<double>& getXValues()
+  {
+    return _Xpath;
+  }
+
+  Path<double>& getYValues()
+  {
+    return _Ypath;
+  }
+
+  CartesianPoint operator[](size_t index)
+  {
+    return _path[index];
+  }
+
+  size_t size() { return _size;}
+ private:
+  Path<CartesianPoint> _path;
+  Path<double> _Xpath;
+  Path<double> _Ypath;
+  size_t _size = 0;
+};
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

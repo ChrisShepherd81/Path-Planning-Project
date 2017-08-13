@@ -20,8 +20,7 @@ class TrajectoryGenerator {
 
   TrajectoryGenerator(GlobalMap& map) : _map(map) {}
 
-  CartesianPath generate(CarState car, int target_lane, double target_speed,
-                          std::vector<double> &previous_path_x, std::vector<double> &previous_path_y);
+  CartesianPath generate(CarState car, int target_lane, double target_speed, CartesianPath &previous_path);
  private:
   GlobalMap& _map;
   Path<double> JMT(std::vector< double> start, std::vector <double> end, double T);

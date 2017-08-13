@@ -17,7 +17,7 @@ std::vector<double> CostCalculation::getCostsForLanes(CarState car_state)
     if(lane != car_state.lane)
       costs[lane] += CHANGE_COST;
 
-    CarState next_car = _prediction.getNextCarInLane(lane, car_state.f_pos.s);
+    CarState next_car = _sensorFusion.getNextCarInLane(lane, car_state.f_pos.s);
 
     if(!next_car.isValid) //No car in lane ahead
       continue;

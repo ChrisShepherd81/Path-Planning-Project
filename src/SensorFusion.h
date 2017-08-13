@@ -1,11 +1,11 @@
 /*
- * Prediction.h
+ * SensorFusion.h
  *
  *  Created on: 30.07.2017
  */
 
-#ifndef SRC_PREDICTION_H_
-#define SRC_PREDICTION_H_
+#ifndef SRC_SENSORFUSION_H_
+#define SRC_SENSORFUSION_H_
 
 #include "Path.h"
 
@@ -13,10 +13,10 @@
 #include <iostream>
 #include <cmath>
 
-class Prediction {
+class SensorFusion {
 
  public:
-  void update(std::vector<std::vector<double>> &other_cars);
+  void update(std::vector<std::vector<double>> sensorFusionData);
   CarState getNextCarInLane(size_t lane, double s) const;
   CarState getPreviousCarInLane(size_t lane, double s) const;
 
@@ -28,4 +28,4 @@ class Prediction {
 
 };
 
-#endif /* SRC_PREDICTION_H_ */
+#endif /* SRC_SENSORFUSION_H_ */

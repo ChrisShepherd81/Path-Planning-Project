@@ -11,19 +11,19 @@
 #include "Path.h"
 #include <iostream>
 
-#include "Prediction.h"
+#include "SensorFusion.h"
 
 
 class CostCalculation {
 
  public:
 
-  CostCalculation(Prediction& prediction) : _prediction(prediction) {}
+  CostCalculation(SensorFusion& prediction) : _sensorFusion(prediction) {}
 
   std::vector<double> getCostsForLanes(CarState car_state);
 
  private:
-  const Prediction& _prediction;
+  const SensorFusion& _sensorFusion;
   double MIN_COST = 0.0;
   double MAX_COST = 1.0;
   double CHANGE_COST = 0.05;
