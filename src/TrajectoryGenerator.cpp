@@ -91,7 +91,6 @@ CartesianPath TrajectoryGenerator::generate(CarState car, int target_lane, doubl
     CartesianPoint next_wp = _map.TransformFrenetToCartesian(car.f_pos.s+(30*i), Simulator::LANE_D_VALUE[target_lane]);
     ptsx.push_back(next_wp.X);
     ptsy.push_back(next_wp.Y);
-
   }
 
   //Transformation
@@ -108,14 +107,12 @@ CartesianPath TrajectoryGenerator::generate(CarState car, int target_lane, doubl
 
   s.set_points(ptsx, ptsy);
 
-  std::vector<double> next_x_vals;
-  std::vector<double> next_y_vals;
+  CartesianPath result;
 
   //copy last path
   for(int i=0; i < previous_path.size(); ++i)
   {
-    next_x_vals.push_back(previous_path[i].X);
-    next_y_vals.push_back(previous_path[i].Y);
+    result.push_back(previous_path[i]);
   }
 
   double target_x = 30.0;
@@ -148,15 +145,7 @@ CartesianPath TrajectoryGenerator::generate(CarState car, int target_lane, doubl
     x_point += ref_x;
     y_point += ref_y;
 
-    next_x_vals.push_back(x_point);
-    next_y_vals.push_back(y_point);
-  }
-
-  CartesianPath result;
-
-  for(size_t i=0; i < next_x_vals.size(); ++i)
-  {
-    result.push_back(CartesianPoint{next_x_vals[i], next_y_vals[i]});
+    result.push_back(CartesianPoint{x_point, y_point});
   }
 
   return result;
