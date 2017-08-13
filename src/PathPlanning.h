@@ -14,6 +14,7 @@ class PathPlanning {
  public:
   PathPlanning(SensorFusion& sensorFusion);
   size_t getTargetLane(CarState car_state, size_t prev_size);
+
  private:
   const SensorFusion& _sensorFusion;
   CostCalculation _costCalculation;
