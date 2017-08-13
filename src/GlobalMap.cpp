@@ -67,16 +67,16 @@ CartesianPoint GlobalMap::TransformFrenetToCartesian(double s, double d)
 
   //Get 4 waypoints before and 4 after given s
   int waypoints = 8;
-  for(size_t i=0; i < waypoints; ++i)
+  for(int i=0; i < waypoints; ++i)
   {
-    int index = outOfRangeIndexer(pointStart+i);
+    size_t index = outOfRangeIndexer(pointStart+i);
 
     x_vals.emplace_back(_map_x[index]);
     y_vals.emplace_back(_map_y[index]);
 
-    if((index - waypoints -1 < 0) && (s > Simulator::MAX_S/2)) //Out of range
+    if(((int)index - waypoints -1 < 0) && (s > Simulator::MAX_S/2)) //Out of range
       s_vals.emplace_back(_map_s[index] + Simulator::MAX_S);
-    else if(index + waypoints -1 > max_index && (s < Simulator::MAX_S/2)) //Out of range
+    else if((int)index + waypoints -1 > max_index && (s < Simulator::MAX_S/2)) //Out of range
       s_vals.emplace_back(_map_s[index] - Simulator::MAX_S);
     else
       s_vals.emplace_back(_map_s[index]);
@@ -153,7 +153,7 @@ int GlobalMap::closestWaypoint(double x, double y)
   double closestLen = 100000; //large number
   int closestWaypoint = 0;
 
-  for(int i = 0; i < _map_x.size(); i++)
+  for(size_t i = 0; i < _map_x.size(); i++)
   {
     double map_x = _map_x[i];
     double map_y = _map_y[i];
