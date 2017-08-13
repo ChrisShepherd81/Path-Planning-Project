@@ -48,7 +48,6 @@ int main() {
   CostCalculation costCalculation(sensorFusion);
 
   int lane = Simulator::START_LANE;
-  double target_speed = Configuration::MAX_SPEED;
 
   h.onMessage([&](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
@@ -93,39 +92,9 @@ int main() {
               car_state.f_pos.d = j[1]["end_path_d"];
             }
 
-            //bool too_close = false;
 
             //TODO: by time
             static size_t counter = 1;
-
-            //Adapt speed
-//            CarState next_car = sensorFusion.getNextCarInLane(lane, curr_car_s);
-//
-//            if(next_car.isValid)
-//            {
-//              double check_car_s = next_car.f_pos.s + ((double)prev_size)*Simulator::INTERVAL*next_car.avgSpeed();
-//
-//              if(check_car_s > car_state.f_pos.s) //Other car is before car
-//              {
-//                double distance_future = check_car_s-car_state.f_pos.s;
-//                double distance_now = next_car.f_pos.s - curr_car_s;
-//
-//                if(distance_future < Configuration::SAFETY_DISTANCE)
-//                {
-//                  too_close = true;
-//                  target_speed = next_car.avgSpeed();
-//                }
-//
-//                if(distance_future < Configuration::EMERGENCY_DISTANCE ||
-//                    distance_now <  Configuration::EMERGENCY_DISTANCE)
-//                {
-//                  std::cout << "EMERGENCY BREAK!\n";
-//                  too_close = true;
-//                  target_speed = 0.0;
-//                }
-//              }
-//            }
-//            // *************************************************************
 
             //Lane change
             if(counter%100 == 0)
@@ -190,11 +159,6 @@ int main() {
             }
             ++counter;
 
-//            //Reset target speed
-//            if(!too_close && target_speed < Configuration::MAX_SPEED)
-//            {
-//              target_speed = Configuration::MAX_SPEED;
-//            }
 
             CartesianPath path = trajectory.getNextPath(car_state, curr_car_s, previous_path, lane);
 
