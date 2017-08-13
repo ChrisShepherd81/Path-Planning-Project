@@ -10,7 +10,7 @@ PathPlanning::PathPlanning(SensorFusion& sensorFusion) :  _sensorFusion(sensorFu
 {
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-size_t PathPlanning::getTargetLane(CarState car_state, size_t prev_size)
+size_t PathPlanning::getTargetLane(CarState car_state, double horizont_time)
 {
   int resultLane = car_state.lane;
   std::vector<double> costs = _costCalculation.getCostsForLanes(car_state);
@@ -44,7 +44,7 @@ size_t PathPlanning::getTargetLane(CarState car_state, size_t prev_size)
       }
       else //A car behind
       {
-        double check_car_s_behind = car_behind.f_pos.s + ((double)prev_size)*Simulator::INTERVAL*car_behind.avgSpeed();
+        double check_car_s_behind = car_behind.f_pos.s + horizont_time*car_behind.avgSpeed();
 
         if(car_state.f_pos.s - check_car_s_behind >= Configuration::MIN_DIST_BEHIND)
           resultLane = target_lane;
@@ -52,7 +52,7 @@ size_t PathPlanning::getTargetLane(CarState car_state, size_t prev_size)
     }
     else // A car ahead
     {
-      double check_car_s_ahead = car_ahead.f_pos.s + ((double)prev_size)*Simulator::INTERVAL*car_ahead.avgSpeed();
+      double check_car_s_ahead = car_ahead.f_pos.s + horizont_time*car_ahead.avgSpeed();
 
       if(!car_behind.isValid) //No car behind
       {
@@ -61,7 +61,7 @@ size_t PathPlanning::getTargetLane(CarState car_state, size_t prev_size)
       }
       else //A car behind
       {
-        double check_car_s_behind = car_behind.f_pos.s + ((double)prev_size)*Simulator::INTERVAL*car_behind.avgSpeed();
+        double check_car_s_behind = car_behind.f_pos.s + horizont_time*car_behind.avgSpeed();
 
         if(check_car_s_ahead-car_state.f_pos.s >= Configuration::MIN_DIST_AHEAD &&
             car_state.f_pos.s - check_car_s_behind >= Configuration::MIN_DIST_BEHIND)

@@ -84,7 +84,7 @@ int main() {
           static size_t counter = 1; //TODO: by time
           if(counter%100 == 0)
           {
-            lane = pathPlanning.getTargetLane(car_state, prev_size);
+            lane = pathPlanning.getTargetLane(car_state, ((double)prev_size)*Simulator::INTERVAL);
           }
           ++counter;
         //*****************************************
