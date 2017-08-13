@@ -23,7 +23,7 @@ The target lane will be calculated by the PathPlanning class. It uses the CostCa
 
 The Trajectory class checks if the given target lane results in a lane change and if it's safe to handle by checking the distance to the previous and next car within the target lane. If it's not safe to change, the target lane will be reseted to the current lane.
 
-[![Result video](./doc/Placeholder.png)](./doc/PathPlanningResult.mp4)
+[![Result video](./doc/Placeholder.png)](https://raw.githubusercontent.com/ChrisShepherd81/Path-Planning-Project/master/doc/PathPlanningResult.mp4)
 
 
 ## Simulator
