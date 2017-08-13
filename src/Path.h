@@ -133,15 +133,8 @@ class CartesianPath
 double distance(double x1, double y1, double x2, double y2);
 double distance(CartesianPoint p0, CartesianPoint p1);
 
-double angle(double x1, double y1, double x2, double y2);
-double angle(CartesianPoint p0, CartesianPoint p1);
-
-CartesianPoint shiftAndRotate(CartesianPoint pointToShift, CartesianPoint refPoint, double angle);
-CartesianPoint rotateAndShift(CartesianPoint pointToShift, CartesianPoint refPoint, double angle);
-
 // For converting back and forth between radians and degrees.
 constexpr double pi();
 double deg2rad(double x);
-double rad2deg(double x);
 
 #endif /* SRC_PATH_H_ */
