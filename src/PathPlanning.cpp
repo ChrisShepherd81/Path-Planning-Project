@@ -12,13 +12,13 @@ PathPlanning::PathPlanning(SensorFusion& sensorFusion) :  _sensorFusion(sensorFu
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 size_t PathPlanning::getTargetLane(const CarState& car_state, double horizont_time)
 {
-  int resultLane = car_state.lane;
+  size_t resultLane = car_state.lane;
   std::vector<double> costs = _costCalculation.getCostsForLanes(car_state);
   size_t optimalLane = std::distance(costs.begin(), std::min_element(costs.begin(), costs.end()));
 
   if(optimalLane != car_state.lane)
   {
-    int target_lane = car_state.lane;
+    size_t target_lane = car_state.lane;
 
     if(optimalLane > car_state.lane)
       ++target_lane;

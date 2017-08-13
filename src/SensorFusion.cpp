@@ -45,7 +45,7 @@ void SensorFusion::updateCar(CarState& car, std::vector<double> &raw_data)
   }
   else
   {
-    car.lane = std::floor(car.f_pos.d/4.0);
+    car.lane = (size_t)std::floor(car.f_pos.d/4.0);
     car.isValid = true;
   }
 
