@@ -11,42 +11,32 @@
 #include <vector>
 #include <iostream>
 
-
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 struct CartesianPoint
 {
   CartesianPoint() = default;
-
   CartesianPoint(double x, double y) : X(x), Y(y) {}
-
   CartesianPoint(std::vector<double> v)
   {
     X = v[0];
     Y = v[1];
   }
 
-  double distanceTo(CartesianPoint const& p) const
-  {
-    return std::sqrt((p.X-X)*(p.X-X)+(p.Y-Y)*(p.Y-Y));
-  }
-
-  void print() { std::cout << X << ", " << Y; }
-
-
   double X;
   double Y;
 };
-
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 struct FrenetPoint
 {
   FrenetPoint() : s(0), d(0){}
   FrenetPoint(double s, double d) : s(s), d(d) {}
-  void print() { std::cout <<  s << ", " << d; }
   double s;
   double d;
 };
-
-struct CarState
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+class CarState
 {
+ public:
   CarState()
   {
     _speed_buffer = std::vector<double>(_bufferSize);
@@ -55,6 +45,7 @@ struct CarState
   CartesianPoint c_pos;
   FrenetPoint f_pos;
   double Yaw;
+
   void setSpeed(double speed)
   {
     curr_speed = speed;
@@ -70,16 +61,18 @@ struct CarState
 
     return sum/_speed_buffer.size();
   }
+
   double curr_speed;
   double curr_s;
   size_t lane;
   bool isValid;
   int id;
+ private:
   static constexpr size_t _bufferSize = 10;
   size_t _index = 0;
   std::vector<double> _speed_buffer;
 };
-
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <typename T>
 using Path = std::vector<T>;
 class CartesianPath
@@ -87,16 +80,14 @@ class CartesianPath
  public:
   CartesianPath() = default;
   CartesianPath(Path<double> X_vals, Path<double> Y_vals)
- {
+  {
     if(X_vals.size() == Y_vals.size())
     {
       for(size_t i=0; i < X_vals.size(); ++i)
-      {
         push_back(CartesianPoint{X_vals[i], Y_vals[i]});
-      }
     }
+  }
 
- }
   void push_back(CartesianPoint p)
   {
     _path.push_back(p);
@@ -120,7 +111,11 @@ class CartesianPath
     return _path[index];
   }
 
-  size_t size() { return _size;}
+  size_t size()
+  {
+    return _size;
+  }
+
  private:
   Path<CartesianPoint> _path;
   Path<double> _Xpath;
@@ -129,11 +124,9 @@ class CartesianPath
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+// *** Helper functions ***
 double distance(double x1, double y1, double x2, double y2);
 double distance(CartesianPoint p0, CartesianPoint p1);
-
-// For converting back and forth between radians and degrees.
 constexpr double pi();
 double deg2rad(double x);
 
