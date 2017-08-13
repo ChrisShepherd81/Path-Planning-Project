@@ -18,7 +18,7 @@ class CostCalculation {
 
  public:
 
-  CostCalculation(SensorFusion& prediction) : _sensorFusion(prediction) {}
+  CostCalculation(SensorFusion& prediction);
 
   std::vector<double> getCostsForLanes(const CarState& car_state);
 
@@ -27,8 +27,8 @@ class CostCalculation {
   void getAllNextCars(double curr_car_s);
   double distanceAheadCost(const CarState& car_state, size_t lane);
   double distanceBehindCost(const CarState& car_state, size_t lane);
-  double speedBehindCost(const CarState& car_state, size_t lane);
-  double speedAheadCost(const CarState& car_state, size_t lane);
+  double speedBehindCost(size_t lane);
+  double speedAheadCost(size_t lane);
   void reset();
   void setMaxDistAhead(double distance);
   void setMaxDistBehind(double distance);
@@ -43,8 +43,6 @@ class CostCalculation {
   std::vector<CarState> _carsBehind;
   double _maxDistAhead;
   double _maxDistBehind;
-
-
 };
 
 #endif /* SRC_COSTCALCULATION_H_ */

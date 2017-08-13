@@ -6,6 +6,13 @@
 
 #include "CostCalculation.h"
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+CostCalculation::CostCalculation(SensorFusion& prediction) :
+  _sensorFusion(prediction),
+  _maxDistAhead(0),
+  _maxDistBehind(0)
+{
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 std::vector<double> CostCalculation::getCostsForLanes(const CarState& car_state)
 {
   std::vector<double> costs = {MIN_COST, MIN_COST, MIN_COST};
@@ -69,8 +76,8 @@ double CostCalculation::getCostForLane(const CarState& car_state, size_t lane)
 
   cost += 3*distanceAheadCost(car_state, lane);
   cost += 0.5*distanceBehindCost(car_state, lane);
-  cost += 2*speedAheadCost(car_state, lane);
-  cost += 0.5*speedBehindCost(car_state, lane);
+  cost += 2*speedAheadCost(lane);
+  cost += 0.5*speedBehindCost(lane);
 
   return cost;
 }
@@ -89,7 +96,7 @@ double CostCalculation::distanceBehindCost(const CarState& car_state, size_t lan
   return MIN_COST;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-double CostCalculation::speedBehindCost(const CarState& car_state, size_t lane)
+double CostCalculation::speedBehindCost(size_t lane)
 {
   double cost = MIN_COST;
   if(_carsBehind[lane].isValid)
@@ -97,7 +104,7 @@ double CostCalculation::speedBehindCost(const CarState& car_state, size_t lane)
   return cost >= 0 ? cost : MIN_COST;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-double CostCalculation::speedAheadCost(const CarState& car_state, size_t lane)
+double CostCalculation::speedAheadCost(size_t lane)
 {
   double cost = MIN_COST;
   if(_carsAhead[lane].isValid)
