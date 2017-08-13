@@ -71,6 +71,7 @@ struct CarState
     return sum/_speed_buffer.size();
   }
   double curr_speed;
+  double curr_s;
   size_t lane;
   bool isValid;
   int id;

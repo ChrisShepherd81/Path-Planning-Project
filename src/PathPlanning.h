@@ -13,7 +13,7 @@
 class PathPlanning {
  public:
   PathPlanning(SensorFusion& sensorFusion);
-  size_t getTargetLane(CarState car_state, double horizont_time);
+  size_t getTargetLane(const CarState& car_state, double horizont_time);
 
  private:
   const SensorFusion& _sensorFusion;

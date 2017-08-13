@@ -10,7 +10,7 @@ PathPlanning::PathPlanning(SensorFusion& sensorFusion) :  _sensorFusion(sensorFu
 {
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-size_t PathPlanning::getTargetLane(CarState car_state, double horizont_time)
+size_t PathPlanning::getTargetLane(const CarState& car_state, double horizont_time)
 {
   int resultLane = car_state.lane;
   std::vector<double> costs = _costCalculation.getCostsForLanes(car_state);

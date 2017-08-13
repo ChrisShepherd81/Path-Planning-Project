@@ -15,13 +15,15 @@ struct Configuration
   static constexpr double SAFETY_DISTANCE = 30.0;
   static constexpr double EMERGENCY_DISTANCE = 10.0;
   static constexpr double MIN_DIST_AHEAD = 25.0;
-  static constexpr double MIN_DIST_BEHIND = 15.0;
+  static constexpr double MIN_DIST_BEHIND = 10.0;
+  static constexpr double PLANNING_UPDATE = 1000.0;
 };
 
 struct Simulator
 {
   static constexpr unsigned int LANES_COUNT = 3;
   static constexpr unsigned int START_LANE = 1;
+  static constexpr unsigned int MIDDLE_LANE = 1;
   static constexpr double MAX_SPEED_CHANGE = 0.224*Configuration::MPH_TO_MPS;
   static constexpr double LANE_D_VALUE [] = {2.0, 6.0, 9.6 };
   static constexpr double INTERVAL = 0.02;

@@ -7,12 +7,12 @@
 #include "Trajectory.h"
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-CartesianPath Trajectory::getNextPath(CarState car_state, double curr_car_s, CartesianPath previous_path, int target_lane)
+CartesianPath Trajectory::getNextPath(CarState car_state, CartesianPath previous_path, int target_lane)
 {
   bool too_close = false;
   double target_speed = Configuration::MAX_SPEED;
 
-  CarState next_car = _sensorFusion.getNextCarInLane(car_state.lane, curr_car_s);
+  CarState next_car = _sensorFusion.getNextCarInLane(car_state.lane, car_state.curr_s);
 
   if(next_car.isValid)
   {
@@ -21,7 +21,7 @@ CartesianPath Trajectory::getNextPath(CarState car_state, double curr_car_s, Car
     if(check_car_s > car_state.f_pos.s) //Other car is before car
     {
       double distance_future = check_car_s-car_state.f_pos.s;
-      double distance_now = next_car.f_pos.s - curr_car_s;
+      double distance_now = next_car.f_pos.s - car_state.curr_s;
 
       if(distance_future < Configuration::SAFETY_DISTANCE)
       {

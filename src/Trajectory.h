@@ -14,7 +14,7 @@ class Trajectory
  public:
   Trajectory(SensorFusion& sensorFusion, GlobalMap& map) : _sensorFusion(sensorFusion), _trajectoryGenerator(map) {}
 
-  CartesianPath getNextPath(CarState car_state, double curr_car_s, CartesianPath previous_path, int target_lane);
+  CartesianPath getNextPath(CarState car_state, CartesianPath previous_path, int target_lane);
  private:
   SensorFusion& _sensorFusion;
   TrajectoryGenerator _trajectoryGenerator;

@@ -5,6 +5,8 @@
 #include <iostream>
 #include <thread>
 #include <vector>
+#include <chrono>
+
 #include "json.hpp"
 
 #include "GlobalMap.h"
@@ -35,6 +37,7 @@ int main() {
   PathPlanning pathPlanning(sensorFusion);
 
   int lane = Simulator::START_LANE;
+  auto time_last_planning = std::chrono::system_clock::now();
 
   h.onMessage([&](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
@@ -59,8 +62,8 @@ int main() {
           // Main car's localization Data
           CarState car_state;
           car_state.c_pos = CartesianPoint{j[1]["x"], j[1]["y"]};
-          double curr_car_s = j[1]["s"];
-          car_state.f_pos = FrenetPoint{curr_car_s, j[1]["d"]};
+          car_state.curr_s = j[1]["s"];
+          car_state.f_pos = FrenetPoint{car_state.curr_s, j[1]["d"]};
           car_state.Yaw = j[1]["yaw"];
           car_state.curr_speed = j[1]["speed"];
           car_state.lane = lane;
@@ -81,16 +84,17 @@ int main() {
         //*****************************************
 
         //**** Path planning ****
-          static size_t counter = 1; //TODO: by time
-          if(counter%100 == 0)
+          auto now = std::chrono::system_clock::now();
+          if(chrono::duration_cast<chrono::milliseconds>(now - time_last_planning).count()
+              > Configuration::PLANNING_UPDATE)
           {
             lane = pathPlanning.getTargetLane(car_state, ((double)prev_size)*Simulator::INTERVAL);
+            time_last_planning = now;
           }
-          ++counter;
         //*****************************************
 
         //**** Trajectory generation ****
-          CartesianPath path = trajectory.getNextPath(car_state, curr_car_s, previous_path, lane);
+          CartesianPath path = trajectory.getNextPath(car_state, previous_path, lane);
         //*****************************************
 
         //**** Set new values to the simulator ****
