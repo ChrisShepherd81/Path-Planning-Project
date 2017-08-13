@@ -16,16 +16,8 @@ size_t PathPlanning::getTargetLane(const CarState& car_state, double horizont_ti
   std::vector<double> costs = _costCalculation.getCostsForLanes(car_state);
   size_t optimalLane = std::distance(costs.begin(), std::min_element(costs.begin(), costs.end()));
 
-  std::cout << "Lane costs : ";
-  for(size_t target_lane=0; target_lane < Simulator::LANES_COUNT; ++target_lane)
-  {
-    std::cout << costs[target_lane] << " ";
-  }
-  std::cout << std::endl;
-
   if(optimalLane != car_state.lane)
   {
-
     int target_lane = car_state.lane;
 
     if(optimalLane > car_state.lane)
